@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard Ejecutivo · Cajas por Ciudad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --bg-elevated: #ffffff;
+    --bg-subtle: #eceef2;
+    --border: #dfe2e8;
+    --text: #14161a;
+    --text-muted: #5b6270;
+    --accent: #4f46e5;
+    --accent-soft: #eef0fe;
+    --positive: #16a34a;
+    --negative: #dc2626;
+    --shadow: 0 1px 2px rgba(20, 22, 26, 0.04), 0 8px 24px rgba(20, 22, 26, 0.06);
+    --radius: 14px;
+    --chip-palette: #4f46e5, #0891b2, #d97706, #db2777, #16a34a, #7c3aed, #dc2626, #0369a1, #ca8a04, #059669;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0e0f13;
+    --bg-elevated: #16181e;
+    --bg-subtle: #1d2026;
+    --border: #2a2e37;
+    --text: #edeef1;
+    --text-muted: #9aa0ad;
+    --accent: #818cf8;
+    --accent-soft: #1f2247;
+    --positive: #4ade80;
+    --negative: #f87171;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    transition: background 0.25s ease, color 0.25s ease;
+    padding-bottom: 60px;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 24px 0;
+  }
+
+  header.top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .titles h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+
+  .titles p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  .top-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  button {
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+
+  button:hover { border-color: var(--accent); }
+  button:active { transform: scale(0.97); }
+
+  #syncBtn {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  #syncBtn:disabled { opacity: 0.65; cursor: progress; }
+
+  #syncStatus {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    text-align: right;
+  }
+
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .kpi-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+  }
+
+  .kpi-card .label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .kpi-card .value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+  }
+
+  .panels {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 16px;
+    margin-bottom: 22px;
+    align-items: stretch;
+  }
+
+  .card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+  }
+
+  .card h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    margin: 0 0 14px;
+  }
+
+  .donut-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .legend {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: space-between;
+  }
+
+  .legend-item .name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-item .val {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+  }
+
+  .filters {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0 12px;
+  }
+
+  .search-box input {
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 11px 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    width: 100%;
+  }
+
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    border: 1px solid var(--border);
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    padding: 6px 13px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+
+  .chip.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .table-card { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  thead th {
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  thead th:hover { color: var(--accent); }
+
+  thead th .arrow { opacity: 0.5; margin-left: 4px; }
+  thead th.sorted .arrow { opacity: 1; color: var(--accent); }
+
+  tbody td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody tr:hover { background: var(--bg-subtle); }
+
+  td.empresa { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+  td.cajas { font-family: 'JetBrains Mono', monospace; }
+
+  .tag {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .tag.ingreso { background: rgba(22, 163, 74, 0.12); color: var(--positive); }
+  .tag.baja { background: rgba(220, 38, 38, 0.12); color: var(--negative); }
+  .tag.otro { background: var(--bg-subtle); color: var(--text-muted); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  .badge-demo {
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(217, 119, 6, 0.15);
+    color: #d97706;
+    padding: 4px 9px;
+    border-radius: 999px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  @media (max-width: 860px) {
+    .panels { grid-template-columns: 1fr; }
+    .kpis { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body data-theme="light">
+<div class="wrap">
+
+  <header class="top">
+    <div class="titles">
+      <h1>Dashboard Ejecutivo <span id="demoBadge" class="badge-demo" style="display:none;">MODO DEMO</span></h1>
+      <p>Distribución de cajas · Ingresos y bajas por ciudad</p>
+    </div>
+    <div class="top-actions">
+      <button id="themeBtn" title="Cambiar tema">🌙 Tema</button>
+      <div>
+        <button id="syncBtn">⟳ Sincronizar Google Sheets</button>
+        <div id="syncStatus">Sin sincronizar aún</div>
+      </div>
+    </div>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi-card">
+      <div class="label">Total de cajas</div>
+      <div class="value" id="kpiCajas">0</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Ticket promedio (cajas / registro)</div>
+      <div class="value" id="kpiTicket">0</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Ingresos y bajas registradas</div>
+      <div class="value" id="kpiTotal">0</div>
+    </div>
+  </section>
+
+  <section class="panels">
+    <div class="card">
+      <h2>Cajas por ciudad</h2>
+      <div class="donut-wrap">
+        <svg id="donutSvg" width="200" height="200" viewBox="0 0 200 200"></svg>
+        <div class="legend" id="legend"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Filtros</h2>
+      <div class="filters">
+        <div class="search-box">
+          <span>🔎</span>
+          <input id="searchInput" type="text" placeholder="Buscar por empresa, razón social, ciudad o tipo..." />
+        </div>
+        <div>
+          <div class="label" style="font-size:13px;color:var(--text-muted);margin-bottom:8px;font-weight:500;">Ciudad (Región)</div>
+          <div class="chip-row" id="chipRow"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card table-card">
+    <h2>Detalle de registros</h2>
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th data-key="empresa">Empresa <span class="arrow">↕</span></th>
+          <th data-key="razonSocial">Razón Social <span class="arrow">↕</span></th>
+          <th data-key="cajas">Cajas <span class="arrow">↕</span></th>
+          <th data-key="mesFacturacion">Mes de Facturación <span class="arrow">↕</span></th>
+          <th data-key="ciudad">Ciudad <span class="arrow">↕</span></th>
+          <th data-key="tipo">Tipo <span class="arrow">↕</span></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div class="empty-state" id="emptyState" style="display:none;">No hay registros que coincidan con los filtros.</div>
+  </section>
+
+</div>
+
+<script>
+  // ---------- Datos de demostración (respaldo si falla la sincronización) ----------
+  const DEMO_DATA = [
+    { empresa: 'Distribuidora Andina S.A.', razonSocial: 'Distribuidora Andina Sociedad Anónima', cajas: 1450, mesFacturacion: 9, ciudad: 'Quito', tipo: 'Ingreso' },
+    { empresa: 'Comercial del Valle', razonSocial: 'Comercial del Valle Cía. Ltda.', cajas: 980, mesFacturacion: 9, ciudad: 'Guayaquil', tipo: 'Ingreso' },
+    { empresa: 'Logística Norte', razonSocial: 'Logística Norte S.A.S.', cajas: 620, mesFacturacion: 8, ciudad: 'Cuenca', tipo: 'Baja' },
+    { empresa: 'Grupo Pacífico', razonSocial: 'Grupo Pacífico Holding S.A.', cajas: 1120, mesFacturacion: 9, ciudad: 'Guayaquil', tipo: 'Ingreso' },
+    { empresa: 'Suministros Sierra', razonSocial: 'Suministros Sierra Cía. Ltda.', cajas: 340, mesFacturacion: 7, ciudad: 'Ambato', tipo: 'Baja' },
+    { empresa: 'Importadora Central', razonSocial: 'Importadora Central del Ecuador S.A.', cajas: 1780, mesFacturacion: 9, ciudad: 'Quito', tipo: 'Ingreso' },
+    { empresa: 'Ferretería Litoral', razonSocial: 'Ferretería Litoral S.A.', cajas: 510, mesFacturacion: 8, ciudad: 'Manta', tipo: 'Ingreso' },
+    { empresa: 'Textiles Cotopaxi', razonSocial: 'Textiles Cotopaxi Cía. Ltda.', cajas: 275, mesFacturacion: 6, ciudad: 'Ambato', tipo: 'Baja' },
+    { empresa: 'Alimentos del Austro', razonSocial: 'Alimentos del Austro S.A.', cajas: 890, mesFacturacion: 9, ciudad: 'Cuenca', tipo: 'Ingreso' },
+    { empresa: 'Papelería Quito Norte', razonSocial: 'Papelería Quito Norte S.A.', cajas: 405, mesFacturacion: 7, ciudad: 'Quito', tipo: 'Baja' },
+  ];
+
+  const CHIP_COLORS = getComputedStyle(document.documentElement)
+    .getPropertyValue('--chip-palette')
+    .split(',')
+    .map((c) => c.trim());
+
+  let allData = [];
+  let activeCity = 'Todas';
+  let searchTerm = '';
+  let sortKey = 'cajas';
+  let sortDir = 'desc';
+
+  // ---------- Tema claro / oscuro ----------
+  const themeBtn = document.getElementById('themeBtn');
+  function applyTheme(theme) {
+    document.body.setAttribute('data-theme', theme);
+    themeBtn.textContent = theme === 'dark' ? '☀️ Tema' : '🌙 Tema';
+    localStorage.setItem('dashboard-theme', theme);
+  }
+  themeBtn.addEventListener('click', () => {
+    const current = document.body.getAttribute('data-theme');
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+    renderDonut();
+  });
+  applyTheme(localStorage.getItem('dashboard-theme') || 'light');
+
+  // ---------- Sincronización ----------
+  const syncBtn = document.getElementById('syncBtn');
+  const syncStatus = document.getElementById('syncStatus');
+  const demoBadge = document.getElementById('demoBadge');
+
+  async function syncData() {
+    syncBtn.disabled = true;
+    syncBtn.textContent = '⟳ Sincronizando...';
+    try {
+      const res = await fetch('/api/dashboard.js');
+      if (!res.ok) throw new Error('Respuesta HTTP ' + res.status);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Error de sincronización');
+
+      allData = json.registros || [];
+      demoBadge.style.display = 'none';
+      syncStatus.textContent = 'Última sincronización: ' + new Date(json.syncedAt).toLocaleString('es-EC');
+    } catch (err) {
+      allData = DEMO_DATA;
+      demoBadge.style.display = 'inline-block';
+      syncStatus.textContent = 'No se pudo sincronizar (' + err.message + '). Mostrando datos de demostración.';
+    } finally {
+      syncBtn.disabled = false;
+      syncBtn.textContent = '⟳ Sincronizar Google Sheets';
+      buildChips();
+      renderAll();
+    }
+  }
+  syncBtn.addEventListener('click', syncData);
+
+  // ---------- Filtros ----------
+  const searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('input', (e) => {
+    searchTerm = e.target.value.trim().toLowerCase();
+    renderAll();
+  });
+
+  function buildChips() {
+    const chipRow = document.getElementById('chipRow');
+    const cities = Array.from(new Set(allData.map((d) => d.ciudad).filter(Boolean))).sort();
+    chipRow.innerHTML = '';
+
+    const allChip = document.createElement('button');
+    allChip.className = 'chip active';
+    allChip.textContent = 'Todas';
+    allChip.dataset.city = 'Todas';
+    chipRow.appendChild(allChip);
+
+    cities.forEach((city) => {
+      const chip = document.createElement('button');
+      chip.className = 'chip';
+      chip.textContent = city;
+      chip.dataset.city = city;
+      chipRow.appendChild(chip);
+    });
+
+    activeCity = 'Todas';
+    chipRow.querySelectorAll('.chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        activeCity = chip.dataset.city;
+        chipRow.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
+        chip.classList.add('active');
+        renderAll();
+      });
+    });
+  }
+
+  function getFilteredData() {
+    return allData.filter((row) => {
+      const matchesCity = activeCity === 'Todas' || row.ciudad === activeCity;
+      if (!matchesCity) return false;
+      if (!searchTerm) return true;
+      const haystack = [row.empresa, row.razonSocial, row.ciudad, row.tipo]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(searchTerm);
+    });
+  }
+
+  // ---------- KPIs ----------
+  function renderKPIs(data) {
+    const totalCajas = data.reduce((sum, r) => sum + (r.cajas || 0), 0);
+    const totalRegistros = data.length;
+    const ticket = totalRegistros ? totalCajas / totalRegistros : 0;
+
+    document.getElementById('kpiCajas').textContent = totalCajas.toLocaleString('es-EC');
+    document.getElementById('kpiTicket').textContent = ticket.toLocaleString('es-EC', { maximumFractionDigits: 1 });
+    document.getElementById('kpiTotal').textContent = totalRegistros.toLocaleString('es-EC');
+  }
+
+  // ---------- Dona SVG (sin librerías) ----------
+  function renderDonut() {
+    const data = getFilteredData();
+    const svg = document.getElementById('donutSvg');
+    const legend = document.getElementById('legend');
+    svg.innerHTML = '';
+    legend.innerHTML = '';
+
+    const byCity = {};
+    data.forEach((row) => {
+      const key = row.ciudad || 'Sin ciudad';
+      byCity[key] = (byCity[key] || 0) + (row.cajas || 0);
+    });
+
+    const entries = Object.entries(byCity).sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((sum, [, val]) => sum + val, 0);
+
+    const cx = 100, cy = 100, r = 78, strokeWidth = 26;
+    const circumference = 2 * Math.PI * r;
+
+    if (total === 0) {
+      const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      bgCircle.setAttribute('cx', cx);
+      bgCircle.setAttribute('cy', cy);
+      bgCircle.setAttribute('r', r);
+      bgCircle.setAttribute('fill', 'none');
+      bgCircle.setAttribute('stroke', 'var(--bg-subtle)');
+      bgCircle.setAttribute('stroke-width', strokeWidth);
+      svg.appendChild(bgCircle);
+      legend.innerHTML = '<div class="legend-item"><span class="name">Sin datos</span></div>';
+      return;
+    }
+
+    let offsetAcc = 0;
+    entries.forEach(([city, value], idx) => {
+      const color = CHIP_COLORS[idx % CHIP_COLORS.length];
+      const fraction = value / total;
+      const dash = fraction * circumference;
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', cx);
+      circle.setAttribute('cy', cy);
+      circle.setAttribute('r', r);
+      circle.setAttribute('fill', 'none');
+      circle.setAttribute('stroke', color);
+      circle.setAttribute('stroke-width', strokeWidth);
+      circle.setAttribute('stroke-dasharray', dash + ' ' + (circumference - dash));
+      circle.setAttribute('stroke-dashoffset', -offsetAcc);
+      circle.setAttribute('transform', 'rotate(-90 ' + cx + ' ' + cy + ')');
+      circle.setAttribute('stroke-linecap', entries.length > 1 ? 'butt' : 'round');
+      svg.appendChild(circle);
+
+      offsetAcc += dash;
+
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      item.innerHTML =
+        '<span class="name"><span class="legend-dot" style="background:' + color + '"></span>' + city + '</span>' +
+        '<span class="val">' + value.toLocaleString('es-EC') + ' (' + (fraction * 100).toFixed(1) + '%)</span>';
+      legend.appendChild(item);
+    });
+
+    const centerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    centerText.setAttribute('x', cx);
+    centerText.setAttribute('y', cy + 5);
+    centerText.setAttribute('text-anchor', 'middle');
+    centerText.setAttribute('font-family', 'Space Grotesk, sans-serif');
+    centerText.setAttribute('font-weight', '700');
+    centerText.setAttribute('font-size', '18');
+    centerText.setAttribute('fill', 'currentColor');
+    centerText.textContent = total.toLocaleString('es-EC');
+    svg.appendChild(centerText);
+  }
+
+  // ---------- Tabla ----------
+  function renderTable() {
+    const data = getFilteredData();
+    const sorted = [...data].sort((a, b) => {
+      let va = a[sortKey], vb = b[sortKey];
+      if (typeof va === 'string') va = va.toLowerCase();
+      if (typeof vb === 'string') vb = vb.toLowerCase();
+      if (va < vb) return sortDir === 'asc' ? -1 : 1;
+      if (va > vb) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    const tbody = document.getElementById('tableBody');
+    const emptyState = document.getElementById('emptyState');
+    tbody.innerHTML = '';
+
+    if (sorted.length === 0) {
+      emptyState.style.display = 'block';
+    } else {
+      emptyState.style.display = 'none';
+    }
+
+    sorted.forEach((row) => {
+      const tr = document.createElement('tr');
+      const tipoClass = row.tipo === 'Ingreso' ? 'ingreso' : row.tipo === 'Baja' ? 'baja' : 'otro';
+      tr.innerHTML =
+        '<td class="empresa">' + escapeHtml(row.empresa) + '</td>' +
+        '<td>' + escapeHtml(row.razonSocial) + '</td>' +
+        '<td class="cajas">' + (row.cajas || 0).toLocaleString('es-EC') + '</td>' +
+        '<td>' + (row.mesFacturacion || '-') + '</td>' +
+        '<td>' + escapeHtml(row.ciudad) + '</td>' +
+        '<td><span class="tag ' + tipoClass + '">' + escapeHtml(row.tipo || '-') + '</span></td>';
+      tbody.appendChild(tr);
+    });
+
+    document.querySelectorAll('#dataTable thead th').forEach((th) => {
+      th.classList.toggle('sorted', th.dataset.key === sortKey);
+      const arrow = th.querySelector('.arrow');
+      if (th.dataset.key === sortKey) {
+        arrow.textContent = sortDir === 'asc' ? '↑' : '↓';
+      } else {
+        arrow.textContent = '↕';
+      }
+    });
+  }
+
+  function escapeHtml(str) {
+    if (str === undefined || str === null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  document.querySelectorAll('#dataTable thead th').forEach((th) => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      if (sortKey === key) {
+        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortKey = key;
+        sortDir = 'desc';
+      }
+      renderTable();
+    });
+  });
+
+  // ---------- Render general ----------
+  function renderAll() {
+    const filtered = getFilteredData();
+    renderKPIs(filtered);
+    renderDonut();
+    renderTable();
+  }
+
+  // Carga inicial: intenta sincronizar; si falla, cae a modo demo.
+  syncData();
+</script>
+</body>
+</html>
